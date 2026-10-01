@@ -7,7 +7,7 @@ Open source meeting notes for ChatGPT and Codex, with a Mac recording companion.
 | **AI Meeting Notes** (`meeting-notes-transcripts`) | Provided transcripts → summary, decisions, actions, open questions, and source references | ChatGPT and Codex; intended for ChatGPT on iPhone where plugins are available |
 | **AI Meeting Notes for Mac** (`ai-meeting-notes`) | Explicit audio capture → local transcription → notes, full transcript, and recordings in Spaces | macOS 15+ with local dependencies |
 
-The transcript edition is a skills-only package prepared for the public plugin directory. A public GitHub repository or release ZIP does not mean it is already approved or listed in ChatGPT. Directory publication and an actual iPhone installation still need verification. It does not record on iPhone. Spaces saves require the host to expose Pages capabilities; otherwise notes are returned in chat with the missing save clearly reported.
+The transcript edition is a skills-only package for the public plugin directory. Its 1.0.0 draft has been uploaded and passed metadata and skill checks; review submission is awaiting developer attestations. A public GitHub repository or release ZIP does not mean it is already approved or listed in ChatGPT. Directory publication and an actual iPhone installation still need verification. It does not record on iPhone. Spaces saves require the host to expose Pages capabilities; otherwise notes are returned in chat with the missing save clearly reported.
 
 ## Transcript notes
 

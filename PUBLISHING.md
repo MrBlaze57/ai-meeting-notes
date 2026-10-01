@@ -19,7 +19,7 @@ Both editions are discoverable through `.agents/plugins/marketplace.json`. A rep
 4. Complete the required review flow and policy attestations. Submit the draft, track its status, and publish the approved version.
 5. Verify the live listing and install it in ChatGPT on iPhone. Use the synthetic transcript below to check notes and platform capability limits. Do not claim mobile operation from ZIP validation alone.
 
-Current submission status: package prepared; no draft upload, review submission, approval, or public directory listing has been verified.
+Current submission status (October 1, 2026): the transcript edition 1.0.0 draft has been uploaded under the verified developer identity. Metadata and skill checks passed with no issues. Review submission is pending acceptance of the developer terms and compliance attestations; approval, public directory publication, and iPhone operation remain unverified.
 
 No publisher credentials or private meeting data belong in the ZIP. The listing points to this repo, public support issues, privacy notice, and software terms. Never upload private transcripts to public issues.
 
