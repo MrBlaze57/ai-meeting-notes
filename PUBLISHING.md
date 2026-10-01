@@ -21,6 +21,16 @@ Both editions are discoverable through `.agents/plugins/marketplace.json`. A rep
 
 Current submission status (October 1, 2026): the transcript edition 1.0.0 was submitted for review by the developer under the verified identity. Metadata and skill checks passed with no issues. The portal shows **In review** and **Not published**. Approval, public directory publication, and iPhone operation remain unverified. Once approved, publish the version and verify the resulting public listing before reporting directory availability.
 
+### Original Mac edition
+
+The original `ai-meeting-notes` 0.3.0 ZIP was also uploaded on October 1, 2026. The portal created an **AI Meeting Notes for Mac** draft and shows **Needs attention**, **Not published**, and MCP configuration **Unavailable**. It has not been submitted for review. The portal reports:
+
+- The Pages integration reference in `.app.json` prevents submission. The directory requires submitting a supported MCP service directly.
+- The local command MCP server requires approval from an OpenAI representative; the standard directory route uses an HTTPS MCP URL.
+- The display name is too generic and needs a recognizable product or brand name.
+
+These are directory eligibility issues, separate from local package validation. Removing the server and Pages dependency would not preserve the original recording and automatic-publication workflow. A directory edition needs a supported connector design that retains the Mac companion and each user's Spaces access, or an approved local-MCP route. The repository package remains available for local Codex installation. No recording was started during upload checks.
+
 No publisher credentials or private meeting data belong in the ZIP. The listing points to this repo, public support issues, privacy notice, and software terms. Never upload private transcripts to public issues.
 
 ## Transcript check

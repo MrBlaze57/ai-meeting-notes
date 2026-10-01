@@ -9,6 +9,8 @@ Open source meeting notes for ChatGPT and Codex, with a Mac recording companion.
 
 The transcript edition is a skills-only package for the public plugin directory. Version 1.0.0 passed metadata and skill checks and was submitted by the developer; the portal shows **In review** and **Not published** as of October 1, 2026. A public GitHub repository or release ZIP does not mean it is already approved or listed in ChatGPT. Directory publication and an actual iPhone installation still need verification. It does not record on iPhone. Spaces saves require the host to expose Pages capabilities; otherwise notes are returned in chat with the missing save clearly reported.
 
+The original Mac edition 0.3.0 was also uploaded as a directory draft. It shows **Needs attention** and has not been submitted for review: the portal flags its Pages integration reference, local command MCP server, and generic display name. See [PUBLISHING.md](PUBLISHING.md) for the requirements. The Mac edition is publicly distributed through the repository marketplace.
+
 ## Transcript notes
 
 Paste a transcript or attach a readable text/Markdown transcript, then ask:
