@@ -1,0 +1,4 @@
+interface:
+  display_name: "Meeting Transcript Notes"
+  short_description: "Turn transcripts into decisions and action items"
+  default_prompt: "Use $transcript-notes to turn this meeting transcript into concise notes, decisions, and action items."

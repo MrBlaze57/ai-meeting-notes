@@ -1,0 +1,14 @@
+#!/bin/bash
+set -euo pipefail
+TASK_PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+TASK_BUNDLE="$TASK_PLUGIN_ROOT/bin/MeetingRecorder.app"
+mkdir -p "$TASK_BUNDLE/Contents/MacOS" "$TASK_PLUGIN_ROOT/.build/module-cache"
+swiftc -swift-version 5 -parse-as-library -O \
+  -target "$(uname -m)-apple-macos15.0" \
+  -module-cache-path "$TASK_PLUGIN_ROOT/.build/module-cache" \
+  "$TASK_PLUGIN_ROOT/native/MeetingRecorder.swift" \
+  "$TASK_PLUGIN_ROOT/native/MeetingDetector.swift" \
+  -o "$TASK_BUNDLE/Contents/MacOS/MeetingRecorder"
+python3 "$TASK_PLUGIN_ROOT/scripts/write-plist.py" "$TASK_BUNDLE/Contents/Info.plist"
+/usr/bin/codesign --force --sign - --identifier com.johnhernandez.ai-meeting-notes.recorder "$TASK_BUNDLE"
+echo "Built $TASK_BUNDLE"

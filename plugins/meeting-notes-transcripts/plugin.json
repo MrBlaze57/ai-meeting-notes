@@ -1,0 +1,50 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "meeting-notes-transcripts",
+  "version": "1.0.0",
+  "description": "Turn provided meeting transcripts into concise summaries, decisions, action items, and open questions with source references. Works in ChatGPT and Codex, including ChatGPT on iPhone where plugins are available. Paste a transcript or attach a readable transcript file. Unknown owners and deadlines stay unknown. Save to your Meetings page in Spaces when requested and when the host provides Pages capabilities; otherwise receive editable notes in chat. This skills-only edition does not record audio or detect online meetings. The separate open source Mac companion provides those functions.",
+  "author": {
+    "name": "John Hernandez",
+    "url": "https://github.com/MrBlaze57/ai-meeting-notes"
+  },
+  "homepage": "https://github.com/MrBlaze57/ai-meeting-notes",
+  "repository": "https://github.com/MrBlaze57/ai-meeting-notes",
+  "license": "MIT",
+  "keywords": [
+    "meetings",
+    "transcripts",
+    "notes",
+    "productivity"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "developerName": "John Hernandez",
+        "category": "Productivity",
+        "capabilities": [
+          "Read",
+          "Write"
+        ],
+        "websiteURL": "https://github.com/MrBlaze57/ai-meeting-notes",
+        "supportURL": "https://github.com/MrBlaze57/ai-meeting-notes/issues",
+        "privacyPolicyURL": "https://github.com/MrBlaze57/ai-meeting-notes/blob/main/PRIVACY.md",
+        "termsOfServiceURL": "https://github.com/MrBlaze57/ai-meeting-notes/blob/main/TERMS.md",
+        "brandColor": "#5B5BD6",
+        "composerIcon": "./assets/icon.svg",
+        "logo": "./assets/icon.svg",
+        "displayName": "AI Meeting Notes",
+        "shortDescription": "Transcripts to meeting notes",
+        "longDescription": "Turn provided meeting transcripts into concise summaries, decisions, action items, and open questions with source references. Works in ChatGPT and Codex, including ChatGPT on iPhone where plugins are available. Paste a transcript or attach a readable transcript file. Unknown owners and deadlines stay unknown. Save to your Meetings page in Spaces when requested and when the host provides Pages capabilities; otherwise receive editable notes in chat. This skills-only edition does not record audio or detect online meetings. The separate open source Mac companion provides those functions.",
+        "defaultPrompt": [
+          "Turn this transcript into meeting notes",
+          "Extract decisions and action items from this meeting",
+          "Save these meeting notes to my Meetings page"
+        ]
+      },
+      "onboardingSkill": "./skills/transcript-notes/SKILL.md",
+      "publication": {
+        "release_notes": "Initial transcript-to-notes edition for ChatGPT and Codex; separate Mac recording companion available in the source repo."
+      }
+    }
+  }
+}

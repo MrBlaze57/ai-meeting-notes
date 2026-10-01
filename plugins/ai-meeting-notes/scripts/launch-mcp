@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+TASK_PLUGIN_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+exec python3 "$TASK_PLUGIN_ROOT/server/main.py" --stdio --start-watcher

@@ -1,0 +1,47 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "ai-meeting-notes",
+  "version": "0.3.0",
+  "description": "Mac companion for online and in-person audio capture, local Whisper transcription, structured Codex notes, and automatic publication of recordings, full transcripts, and notes to your Meetings page in Codex Spaces. Requires macOS 15+, local dependencies, signed-in Codex CLI, and Pages. Build the companion from source. Recording is explicit, visible, and independently stoppable; online detection asks before recording. This local MCP edition is distributed through the repository marketplace, not the public ChatGPT directory.",
+  "author": {
+    "name": "John Hernandez",
+    "url": "https://github.com/MrBlaze57/ai-meeting-notes"
+  },
+  "homepage": "https://github.com/MrBlaze57/ai-meeting-notes",
+  "repository": "https://github.com/MrBlaze57/ai-meeting-notes",
+  "license": "MIT",
+  "keywords": [
+    "meetings",
+    "transcripts",
+    "notes",
+    "productivity"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "developerName": "John Hernandez",
+        "category": "Productivity",
+        "capabilities": [
+          "Read",
+          "Write"
+        ],
+        "websiteURL": "https://github.com/MrBlaze57/ai-meeting-notes",
+        "supportURL": "https://github.com/MrBlaze57/ai-meeting-notes/issues",
+        "privacyPolicyURL": "https://github.com/MrBlaze57/ai-meeting-notes/blob/main/PRIVACY.md",
+        "termsOfServiceURL": "https://github.com/MrBlaze57/ai-meeting-notes/blob/main/TERMS.md",
+        "brandColor": "#5B5BD6",
+        "composerIcon": "./assets/icon.svg",
+        "logo": "./assets/icon.svg",
+        "displayName": "AI Meeting Notes for Mac",
+        "shortDescription": "Record and organize meetings",
+        "longDescription": "Mac companion for online and in-person audio capture, local Whisper transcription, structured Codex notes, and automatic publication of recordings, full transcripts, and notes to your Meetings page in Codex Spaces. Requires macOS 15+, local dependencies, signed-in Codex CLI, and Pages. Build the companion from source. Recording is explicit, visible, and independently stoppable; online detection asks before recording. This local MCP edition is distributed through the repository marketplace, not the public ChatGPT directory.",
+        "defaultPrompt": [
+          "Start recording my online meeting",
+          "Stop recording and save the meeting to Spaces",
+          "Turn this recording into meeting notes"
+        ]
+      },
+      "apps": "./.app.json"
+    }
+  }
+}

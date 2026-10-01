@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Meeting Notes"
+  short_description: "Record meetings and organize notes in Spaces"
+  default_prompt: "Use $meeting-notes to record this meeting and save its notes, transcript, and recording in my Meetings page."
