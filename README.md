@@ -61,6 +61,16 @@ Online capture includes your microphone and audio from all Mac apps. In-person c
 
 The optional detector requires macOS Accessibility. Enable **MeetingRecorder** in **System Settings → Privacy & Security → Accessibility**. It looks for active Zoom, Teams, or Google Meet call controls and offers **Start recording**, **Not now**, and **Disable detection**. Audio starts only after Start is clicked. Detection uses English Accessibility labels and selected accessible windows; app/browser changes and inaccessible or inactive tabs can require manual recording. There is no login-item installation, stored browser history, or saved UI snapshot.
 
+Background detection checks existing authorization without opening setup windows or requesting permission. Its menu bar settings provide an explicit **Enable Accessibility** action. macOS stores the grant; the plugin cannot grant itself permission. Grant access to the installed recorder copy that Codex actually launches.
+
+Builds reuse the existing verified bundle when sources, compiler, target, and signing identity are unchanged. This preserves the app's identity during ordinary rebuild commands and restarts. Code changes in an ad hoc build can still require authorization again. For permission continuity across updates, sign with your Apple Development or Developer ID certificate:
+
+```sh
+MEETING_NOTES_SIGNING_IDENTITY='your certificate name or SHA-1' ./script/build_and_run.sh --build-only
+```
+
+The selected signer is remembered locally for later builds. Signing failures preserve the previous recorder; the build never silently falls back from certificate signing to ad hoc signing. `MeetingRecorder.app/Contents/MacOS/MeetingRecorder --check-accessibility` reports authorization without requesting access or starting recording.
+
 ## Canonical meeting library
 
 The Mac companion saves dated child Pages beneath **Meetings**, with editable notes, the full transcript, a transcript attachment, and recording attachments. Source timestamps/segment references support substantive items. Whisper provides timestamps but no speaker identification. Recording files are split into upload-safe MP3 parts when necessary; current Pages tools do not provide an inline audio player.

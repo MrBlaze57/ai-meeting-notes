@@ -113,11 +113,12 @@ final class Recorder: NSObject, NSApplicationDelegate, SCStreamOutput, SCStreamD
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApp.setActivationPolicy(.regular)
         mode = argument("--mode") ?? "online"
         maxMinutes = Int(argument("--max-minutes") ?? "180") ?? 180
         if let path = argument("--capture-dir") { directory = URL(fileURLWithPath: path, isDirectory: true) }
-        setupWindow()
+        let backgroundDetection = directory == nil && CommandLine.arguments.contains("--watch")
+        NSApp.setActivationPolicy(backgroundDetection ? .accessory : .regular)
+        setupWindow(show: !backgroundDetection)
         if let path = argument("--test-stop") {
             // Synthetic finalized-audio fixture only. This branch never calls startCapture.
             directory = URL(fileURLWithPath: path, isDirectory: true)
@@ -157,7 +158,6 @@ final class Recorder: NSObject, NSApplicationDelegate, SCStreamOutput, SCStreamD
                 checkbox.state = !forced && UserDefaults.standard.object(forKey: "meetingDetectionEnabled") as? Bool == false ? .off : .on
                 if forced { UserDefaults.standard.set(true, forKey: "meetingDetectionEnabled") }
                 if checkbox.state == .on { enableDetection(prompt: false) }
-                if AXIsProcessTrusted() { window?.orderOut(nil); NSApp.setActivationPolicy(.accessory) }
             }
             return
         }
@@ -184,7 +184,7 @@ final class Recorder: NSObject, NSApplicationDelegate, SCStreamOutput, SCStreamD
         Task { await self.startCapture() }
     }
 
-    func setupWindow() {
+    func setupWindow(show: Bool = true) {
         let win = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 470, height: 330),
                            styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
         win.title = "AI Meeting Notes"
@@ -199,8 +199,10 @@ final class Recorder: NSObject, NSApplicationDelegate, SCStreamOutput, SCStreamD
         win.contentView?.addSubview(detailLabel)
         win.contentView?.addSubview(durationLabel)
         win.center()
-        win.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        if show {
+            win.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+        }
         window = win
     }
 
@@ -523,7 +525,7 @@ final class Recorder: NSObject, NSApplicationDelegate, SCStreamOutput, SCStreamD
             }
             detectorLock = fd
         }
-        if prompt {
+        if prompt && !AXIsProcessTrusted() {
             let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
             _ = AXIsProcessTrustedWithOptions(options)
         }
@@ -662,6 +664,11 @@ final class Recorder: NSObject, NSApplicationDelegate, SCStreamOutput, SCStreamD
 
 @main struct MeetingRecorderApp {
     static func main() {
+        if CommandLine.arguments.contains("--check-accessibility") {
+            // Query only: no prompt, setup window, detector, or capture.
+            print("{\"accessibility_authorized\":\(AXIsProcessTrusted() ? "true" : "false")}")
+            return
+        }
         if let index = CommandLine.arguments.firstIndex(of: "--test-detection"), index + 1 < CommandLine.arguments.count {
             do { try DetectionFixtures.run(path: CommandLine.arguments[index + 1]) }
             catch { fputs(error.localizedDescription + "\n", stderr); exit(1) }
