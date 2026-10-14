@@ -51,8 +51,12 @@ def write_json(path, value):
 
 
 def digest(path):
+    # macOS can launch the worker with Python 3.9, which lacks file_digest.
+    sha256 = hashlib.sha256()
     with path.open("rb") as stream:
-        return hashlib.file_digest(stream, "sha256").hexdigest()
+        for chunk in iter(lambda: stream.read(256 * 1024), b""):
+            sha256.update(chunk)
+    return sha256.hexdigest()
 
 
 def alive(pid):

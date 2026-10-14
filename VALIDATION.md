@@ -26,3 +26,13 @@ All 51 tests passed, including unchanged-build identity preservation, retaining 
 The installed recorder's prompt-free Accessibility query reported **not authorized**. Background detection was re-enabled and reported **needs_accessibility**, with no active recording. Background watcher startup now keeps its setup window hidden and never requests Accessibility permission; the user can open settings explicitly. Native UI inspection was unavailable because Computer Use failed, so window visibility was not independently observed.
 
 No valid code-signing certificate was available. This Mac remains on ad hoc signing. Actual permission retention across detector restarts awaits a user grant and read-back verification. Permission retention across code updates requires stable certificate signing; the new signing option supports it, but a certificate-signed build has not been validated here. No live capture or live meeting detection was tested.
+
+## Attachment hashing compatibility (October 13, 2026)
+
+Attachment preparation failed when the worker ran under macOS's Python 3.9 because `hashlib.file_digest` requires Python 3.11. File hashes now use streaming SHA-256 with bounded reads, keeping attachment digests and retry receipts compatible with previous publications.
+
+A regression test reproduced the original failure before the fix, then passed on Python 3.9 with the newer helper absent. Empty, short, and million-byte known SHA-256 vectors are covered. All 52 tests passed on Python 3.12; the publication-related tests also passed on Python 3.9. The installed worker's digest was checked independently on Python 3.9.
+
+The required `./script/build_and_run.sh --build-only` invocation refused to run while recorder processes were open. The native builder was run directly and reused the unchanged verified bundle; the installed recorder's strict code-sign verification also passed. This Python-only fix did not rebuild or re-sign the installed app, change permissions, or start capture.
+
+An existing stopped online meeting was retried through the installed automatic worker and completed Spaces publication. Independent read-back confirmed its notes, all 556 timestamped transcript segments with their full text, the complete transcript attachment, three recording parts, and its link in the Meetings parent. Attachment access, digests, and sizes matched the saved receipts. Original microphone/system audio, normalized audio, transcript, and notes remained byte-for-byte unchanged. Audio playback was not tested.
