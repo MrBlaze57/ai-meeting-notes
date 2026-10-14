@@ -130,6 +130,8 @@ def main():
     parser.add_argument("--language")
     parser.add_argument("--status", action="store_true")
     parser.add_argument("--detected-start", help="Explicit user click on the native detector's Start button.")
+    parser.add_argument("--manual-start", help="Explicit user click on the native Record button.")
+    parser.add_argument("--mode", choices=["online", "in_person"], default="online")
     parser.add_argument("--start-watcher", action="store_true")
     args = parser.parse_args()
     store = Store(args.home)
@@ -137,6 +139,8 @@ def main():
         print(json.dumps(store.finish_meeting(args.meeting, args.retry)))
     elif args.detected_start:
         print(json.dumps(store.start(title=args.detected_start, mode="online")))
+    elif args.manual_start is not None:
+        print(json.dumps(store.start(title=args.manual_start, mode=args.mode)))
     elif args.worker:
         if args.worker == "finish":
             from workflow import finish

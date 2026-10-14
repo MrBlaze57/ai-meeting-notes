@@ -55,6 +55,10 @@ Ask Codex to set up your **Meetings** destination. It finds or creates your own 
 
 Recording opens a visible window and red menu bar indicator. **Stop recording** stops capture and launches an independent background workflow: local transcription, Codex notes, then Spaces publication. No second chat message is needed. The window shows progress, **Open notes**, or **Retry** to resume checkpoints. Closing the progress window or chat does not cancel processing. The default duration limit is three hours, configurable up to eight hours.
 
+You can also start directly in **AI Meeting Notes Recorder**: choose **Online** or **In person**, optionally enter a title, and click **Record**. The microphone menu offers **Record a meeting…** to open these controls without a chat message.
+
+Once capture begins, a small draggable floating indicator shows recording status, elapsed time, and a waveform driven only by microphone input. It stays above other apps and accompanies fullscreen windows. Its **Stop** button immediately ends capture and starts the same automatic save to Meetings. The menu bar also keeps a Stop command and access to the full recording controls.
+
 Online capture includes your microphone and audio from all Mac apps. In-person capture uses the microphone. Grant microphone permission and, for online meetings, Screen & System Audio Recording access to **MeetingRecorder** when prompted. Only audio is saved.
 
 ## Detect a meeting and ask to record
@@ -86,6 +90,8 @@ python3 scripts/package-plugin.py
 ```
 
 `./script/build_and_run.sh` opens an idle setup window without recording. Builds refuse to overwrite an open recorder. Tests use fixtures and synthetic audio, never live capture. `python3 scripts/demo-pipeline.py` synthesizes speech for an optional local pipeline demo.
+
+`./script/build_and_run.sh --preview-indicator` shows a clearly labeled waveform preview with synthetic levels; it never requests recording permissions or opens capture devices.
 
 Publication receipts distinguish Page creation, uploads, content, indexing, and read-back verification. Retries reuse saved receipts and preserve Page edits. The automatic runner restricts processing to its assigned meeting and uses the connected Pages capabilities; it has no copied Spaces credentials or undocumented API integration.
 

@@ -4,8 +4,8 @@ TASK_PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TASK_PLUGIN_ROOT="$TASK_PROJECT_ROOT/plugins/ai-meeting-notes"
 MODE="${1:-run}"
 case "$MODE" in
-  run|--verify|--build-only) ;;
-  *) echo "Usage: $0 [--build-only|--verify]" >&2; exit 2 ;;
+  run|--verify|--build-only|--preview-indicator) ;;
+  *) echo "Usage: $0 [--build-only|--verify|--preview-indicator]" >&2; exit 2 ;;
 esac
 # Never kill an active meeting to rebuild its capture process.
 if pgrep -x MeetingRecorder >/dev/null; then
@@ -14,7 +14,11 @@ if pgrep -x MeetingRecorder >/dev/null; then
 fi
 "$TASK_PLUGIN_ROOT/scripts/build-recorder"
 if [[ "$MODE" == "--build-only" ]]; then exit 0; fi
-/usr/bin/open -n "$TASK_PLUGIN_ROOT/bin/MeetingRecorder.app"
+if [[ "$MODE" == "--preview-indicator" ]]; then
+  /usr/bin/open -n "$TASK_PLUGIN_ROOT/bin/MeetingRecorder.app" --args --preview-indicator
+else
+  /usr/bin/open -n "$TASK_PLUGIN_ROOT/bin/MeetingRecorder.app"
+fi
 if [[ "$MODE" == "--verify" ]]; then
   sleep 1
   pgrep -x MeetingRecorder >/dev/null

@@ -11,6 +11,8 @@ Check `meeting_status.destination`. If no Meetings destination is configured, fi
 
 ## Recording
 
+The native recorder also offers a manual **Record** button and an **Online / In person** selector, reachable through **Record a meeting…** in its menu bar menu. Opening these controls does not start audio. After the user clicks Record and capture begins, a small floating indicator shows elapsed time and microphone activity. Its Stop button and the menu bar Stop command stop capture independently of chat and trigger the existing automatic publication workflow.
+
 Online-meeting detection can run independently and offers Start recording, Not now, and Disable detection. It requires macOS Accessibility and looks for active call controls rather than app launch. Use `set_meeting_detection` for enable/disable requests; this does not authorize audio recording. Check `meeting_status.meeting_detection` before claiming detection is active. English UI labels and accessible Zoom/Teams/Meet windows are supported heuristically; do not promise every browser or app version is detected.
 
 Call `meeting_status` to inspect setup, the configured Meetings page, and any active meeting. Start capture only when the user explicitly requests recording, never as part of setup or a general note-taking request. Use `online` for Mac system audio plus microphone, or `in_person` for microphone only. Resolve mode if it is unclear; a missing title can default to Meeting with its date. Recording captures audio from all Mac apps in online mode.

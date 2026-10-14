@@ -36,3 +36,13 @@ A regression test reproduced the original failure before the fix, then passed on
 The required `./script/build_and_run.sh --build-only` invocation refused to run while recorder processes were open. The native builder was run directly and reused the unchanged verified bundle; the installed recorder's strict code-sign verification also passed. This Python-only fix did not rebuild or re-sign the installed app, change permissions, or start capture.
 
 An existing stopped online meeting was retried through the installed automatic worker and completed Spaces publication. Independent read-back confirmed its notes, all 556 timestamped transcript segments with their full text, the complete transcript attachment, three recording parts, and its link in the Meetings parent. Attachment access, digests, and sizes matched the saved receipts. Original microphone/system audio, normalized audio, transcript, and notes remained byte-for-byte unchanged. Audio playback was not tested.
+
+## Manual recording and floating indicator (October 13, 2026)
+
+The recorder now has a manual Record button with online/in-person selection and an optional title. Both manual CLI paths were tested through the real local Store with only the external app launch replaced; no capture was started. Invalid modes do not launch a recorder.
+
+All 61 tests passed on Python 3.12. Native microphone-level fixtures cover silence, empty buffers, speech energy, planar/interleaved stereo, integer PCM formats, nonfinite samples, missing-buffer expiry, and resetting after Stop. The required build-only script passed and the installed bundle passed strict code-sign verification. An unchanged installed build reused the copied, verified source bundle.
+
+Native UI inspection confirmed the manual controls and mode-specific audio description. The capture-free floating preview displayed its elapsed time and synthetic waveform, accepted a drag, and closed using its Stop control. The indicator is 284 by 64 points and uses a nonactivating floating panel. Its production waveform reads only microphone buffers, and its Stop action calls the existing immediate capture-stop handler. Live microphone waveform response, fullscreen placement, and live audio shutdown for this update remain unverified. No recording was started during development or validation.
+
+The native update changed this local ad hoc build's signature. The installed watcher reported that its old Accessibility grant was no longer valid; after user approval and Touch ID, the installed app's grant was refreshed and the watcher reported watching with Accessibility authorized. Authorization survived another watcher restart. Stable certificate signing remains unavailable on this Mac.

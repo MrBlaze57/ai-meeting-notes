@@ -84,6 +84,13 @@ final class Recorder: NSObject, NSApplicationDelegate, SCStreamOutput, SCStreamD
     let detailLabel = NSTextField(wrappingLabelWithString: "")
     let durationLabel = NSTextField(labelWithString: "")
     var stopButton: NSButton?
+    let microphoneMeter = MicrophoneMeter()
+    var recordingIndicator: RecordingIndicator?
+    var indicatorTimer: Timer?
+    var manualTitleField: NSTextField?
+    var manualModePicker: NSPopUpButton?
+    var recordButton: NSButton?
+    var manualStartBusy = false
     var detectionTimer: Timer?
     var detectionGate = DetectionGate()
     var detectionBusy = false
@@ -117,8 +124,21 @@ final class Recorder: NSObject, NSApplicationDelegate, SCStreamOutput, SCStreamD
         maxMinutes = Int(argument("--max-minutes") ?? "180") ?? 180
         if let path = argument("--capture-dir") { directory = URL(fileURLWithPath: path, isDirectory: true) }
         let backgroundDetection = directory == nil && CommandLine.arguments.contains("--watch")
+        let indicatorPreview = CommandLine.arguments.contains("--preview-indicator")
         NSApp.setActivationPolicy(backgroundDetection ? .accessory : .regular)
-        setupWindow(show: !backgroundDetection)
+        let appMenu = NSMenu()
+        let appItem = NSMenuItem()
+        let commands = NSMenu()
+        commands.addItem(NSMenuItem(title: "Quit AI Meeting Notes", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        appItem.submenu = commands
+        appMenu.addItem(appItem)
+        NSApp.mainMenu = appMenu
+        setupWindow(show: !backgroundDetection && !indicatorPreview)
+        if indicatorPreview {
+            // UI-only preview: never request permissions or initialize capture.
+            showIndicator(preview: true)
+            return
+        }
         if let path = argument("--test-stop") {
             // Synthetic finalized-audio fixture only. This branch never calls startCapture.
             directory = URL(fileURLWithPath: path, isDirectory: true)
@@ -141,7 +161,7 @@ final class Recorder: NSObject, NSApplicationDelegate, SCStreamOutput, SCStreamD
         }
         if directory == nil {
             titleLabel.stringValue = "Ready when you are"
-            detailLabel.stringValue = "Ask Codex to record a meeting, or enable meeting detection below.\n\nDetection looks for active call controls in Zoom, Teams, and Google Meet. It asks before recording.\n\nAccessibility access is needed to detect calls."
+            setupManualControls()
             durationLabel.stringValue = "Recording has not started."
             let checkbox = NSButton(checkboxWithTitle: "Ask to record online meetings", target: self, action: #selector(toggleDetection))
             checkbox.frame = NSRect(x: 28, y: 24, width: 260, height: 30)
@@ -153,6 +173,7 @@ final class Recorder: NSObject, NSApplicationDelegate, SCStreamOutput, SCStreamD
             permission.isHidden = AXIsProcessTrusted()
             window?.contentView?.addSubview(permission)
             accessibilityButton = permission
+            setupIdleMenu()
             if CommandLine.arguments.contains("--watch") {
                 let forced = CommandLine.arguments.contains("--enable-detection")
                 checkbox.state = !forced && UserDefaults.standard.object(forKey: "meetingDetectionEnabled") as? Bool == false ? .off : .on
@@ -173,6 +194,9 @@ final class Recorder: NSObject, NSApplicationDelegate, SCStreamOutput, SCStreamD
         let item = NSMenuItem(title: "Stop meeting recording", action: #selector(stopFromUI), keyEquivalent: "")
         item.target = self
         menu.addItem(item)
+        let controls = NSMenuItem(title: "Show recording controls", action: #selector(showProcessing), keyEquivalent: "")
+        controls.target = self
+        menu.addItem(controls)
         statusItem?.menu = menu
         let button = NSButton(title: "Stop recording", target: self, action: #selector(stopFromUI))
         button.bezelStyle = .rounded
@@ -185,12 +209,14 @@ final class Recorder: NSObject, NSApplicationDelegate, SCStreamOutput, SCStreamD
     }
 
     func setupWindow(show: Bool = true) {
-        let win = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 470, height: 330),
+        let idle = directory == nil && argument("--process-dir") == nil && argument("--test-stop") == nil
+        let height: CGFloat = idle ? 420 : 330
+        let win = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 470, height: height),
                            styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
         win.title = "AI Meeting Notes"
         win.isReleasedWhenClosed = false
         titleLabel.font = .systemFont(ofSize: 26, weight: .semibold)
-        titleLabel.frame = NSRect(x: 28, y: 258, width: 414, height: 36)
+        titleLabel.frame = NSRect(x: 28, y: height - 72, width: 414, height: 36)
         detailLabel.font = .systemFont(ofSize: 14)
         detailLabel.frame = NSRect(x: 28, y: 90, width: 414, height: 150)
         durationLabel.font = .monospacedDigitSystemFont(ofSize: 15, weight: .medium)
@@ -204,6 +230,73 @@ final class Recorder: NSObject, NSApplicationDelegate, SCStreamOutput, SCStreamD
             NSApp.activate(ignoringOtherApps: true)
         }
         window = win
+    }
+
+    func setupManualControls() {
+        detailLabel.frame = NSRect(x: 28, y: 286, width: 414, height: 54)
+        let title = NSTextField(string: "")
+        title.placeholderString = "Meeting title (optional)"
+        title.setAccessibilityLabel("Meeting title")
+        title.frame = NSRect(x: 28, y: 239, width: 414, height: 28)
+        window?.contentView?.addSubview(title)
+        manualTitleField = title
+        let modes = NSPopUpButton(frame: NSRect(x: 28, y: 195, width: 414, height: 30), pullsDown: false)
+        modes.addItems(withTitles: ["Online · Microphone + Mac audio", "In person · Microphone only"])
+        modes.target = self
+        modes.action = #selector(manualModeChanged)
+        modes.setAccessibilityLabel("Recording mode")
+        window?.contentView?.addSubview(modes)
+        manualModePicker = modes
+        let button = NSButton(title: "Record", target: self, action: #selector(startManualRecording))
+        button.setAccessibilityLabel("Record meeting")
+        button.bezelStyle = .rounded
+        button.image = NSImage(systemSymbolName: "record.circle", accessibilityDescription: nil)
+        button.imagePosition = .imageLeading
+        button.frame = NSRect(x: 28, y: 145, width: 126, height: 36)
+        window?.contentView?.addSubview(button)
+        recordButton = button
+        durationLabel.frame = NSRect(x: 28, y: 91, width: 414, height: 44)
+        durationLabel.font = .systemFont(ofSize: 12)
+        manualModeChanged()
+    }
+
+    @objc func manualModeChanged() {
+        detailLabel.stringValue = manualModePicker?.indexOfSelectedItem == 1
+            ? "Microphone only for in-person conversations.\nStop when finished to save your meeting to Spaces."
+            : "Microphone + Mac system audio.\nAudio from all Mac apps will be included."
+    }
+
+    @objc func startManualRecording() {
+        guard !manualStartBusy else { return }
+        let value = manualTitleField?.stringValue.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let title = value.isEmpty ? "Meeting" : String(value.prefix(180))
+        let mode = manualModePicker?.indexOfSelectedItem == 1 ? "in_person" : "online"
+        manualStartBusy = true
+        recordButton?.isEnabled = false
+        detectionQueue.async { self.launchRecording(title: title, mode: mode, manual: true) }
+    }
+
+    func showIndicator(preview: Bool = false) {
+        let indicator = RecordingIndicator(preview: preview) { [weak self] in
+            if preview { self?.indicatorTimer?.invalidate(); NSApp.terminate(nil) }
+            else { self?.stopFromUI() }
+        }
+        recordingIndicator = indicator
+        indicator.orderFrontRegardless()
+        window?.orderOut(nil)
+        let previewStart = ProcessInfo.processInfo.systemUptime
+        let timer = Timer(timeInterval: 0.05, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            if preview {
+                let elapsed = ProcessInfo.processInfo.systemUptime - previewStart
+                let level = Float(max(0, sin(elapsed * 2.7)) * (0.3 + 0.4 * abs(sin(elapsed * 7))))
+                indicator.update(seconds: Int(elapsed), level: level)
+            } else {
+                indicator.update(seconds: Int(Date().timeIntervalSince(self.startTime)), level: self.microphoneMeter.level())
+            }
+        }
+        indicatorTimer = timer
+        RunLoop.main.add(timer, forMode: .common)
     }
 
     @MainActor func startCapture() async {
@@ -257,6 +350,7 @@ final class Recorder: NSObject, NSApplicationDelegate, SCStreamOutput, SCStreamD
             titleLabel.stringValue = "Recording your meeting"
             detailLabel.stringValue = mode == "online" ? "Microphone + Mac system audio\n\nAudio from all Mac apps is included.\nUse headphones to reduce echo.\n\nClick Stop to save notes, transcript, and audio to Meetings automatically." : "Microphone only\n\nKeep your microphone near the conversation.\n\nClick Stop to save notes, transcript, and audio to Meetings automatically."
             statusItem?.button?.contentTintColor = .systemRed
+            showIndicator()
             persist()
         } catch {
             fail(error.localizedDescription + (mode == "online" ? "\nFor Mac audio, check Privacy & Security → Screen & System Audio Recording, then relaunch." : ""))
@@ -269,6 +363,7 @@ final class Recorder: NSObject, NSApplicationDelegate, SCStreamOutput, SCStreamD
 
     func append(_ buffer: AVAudioPCMBuffer, name: String, timestamp: Double) {
         guard acceptingAudio, let directory = directory else { return }
+        if name == "microphone" { microphoneMeter.update(buffer) }
         do {
             if tracks[name] == nil { tracks[name] = AudioTrack(name: name, directory: directory, baseline: baseline) }
             try tracks[name]?.append(buffer, at: timestamp)
@@ -329,6 +424,11 @@ final class Recorder: NSObject, NSApplicationDelegate, SCStreamOutput, SCStreamD
         finishing = true
         // Reject subsequent buffers immediately, before waiting for async stream shutdown.
         audioQueue.sync { acceptingAudio = false }
+        indicatorTimer?.invalidate()
+        indicatorTimer = nil
+        recordingIndicator?.orderOut(nil)
+        recordingIndicator = nil
+        microphoneMeter.reset()
         timer?.invalidate()
         stopButton?.isEnabled = false
         titleLabel.stringValue = "Stopping recording…"
@@ -530,19 +630,27 @@ final class Recorder: NSObject, NSApplicationDelegate, SCStreamOutput, SCStreamD
             _ = AXIsProcessTrustedWithOptions(options)
         }
         detectionEnabled = true
-        statusItem = statusItem ?? NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        statusItem?.button?.title = "🎙"
-        let menu = NSMenu()
-        let settings = NSMenuItem(title: "Meeting detection settings", action: #selector(showDetectionSettings), keyEquivalent: "")
-        settings.target = self
-        menu.addItem(settings)
-        let quit = NSMenuItem(title: "Quit meeting detection", action: #selector(quitDetection), keyEquivalent: "")
-        quit.target = self
-        menu.addItem(quit)
-        statusItem?.menu = menu
+        setupIdleMenu()
         detectionTimer?.invalidate()
         detectionTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in self?.detectionTick() }
         detectionTick()
+    }
+
+    func setupIdleMenu() {
+        statusItem = statusItem ?? NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        statusItem?.button?.title = "🎙"
+        let menu = NSMenu()
+        let record = NSMenuItem(title: "Record a meeting…", action: #selector(showDetectionSettings), keyEquivalent: "")
+        record.target = self
+        menu.addItem(record)
+        menu.addItem(.separator())
+        let settings = NSMenuItem(title: "Meeting detection settings", action: #selector(showDetectionSettings), keyEquivalent: "")
+        settings.target = self
+        menu.addItem(settings)
+        let quit = NSMenuItem(title: "Quit AI Meeting Notes", action: #selector(quitDetection), keyEquivalent: "")
+        quit.target = self
+        menu.addItem(quit)
+        statusItem?.menu = menu
     }
 
     @objc func requestDetectionAccess() {
@@ -634,11 +742,15 @@ final class Recorder: NSObject, NSApplicationDelegate, SCStreamOutput, SCStreamD
     }
 
     func startDetectedMeeting(_ event: DetectedMeeting) {
+        launchRecording(title: String(event.title.prefix(180)), mode: "online")
+    }
+
+    func launchRecording(title: String, mode: String, manual: Bool = false) {
         let process = Process()
         let output = Pipe()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         process.arguments = ["python3", pluginRoot.appendingPathComponent("server/main.py").path,
-                             "--detected-start", String(event.title.prefix(180)), "--home", cacheDirectory.path]
+                             "--manual-start", title, "--mode", mode, "--home", cacheDirectory.path]
         var env = ProcessInfo.processInfo.environment
         env["PATH"] = "/opt/homebrew/bin:/usr/local/bin:" + (env["PATH"] ?? "/usr/bin:/bin")
         process.environment = env
@@ -648,16 +760,25 @@ final class Recorder: NSObject, NSApplicationDelegate, SCStreamOutput, SCStreamD
             try process.run()
             let result = output.fileHandleForReading.readDataToEndOfFile()
             process.waitUntilExit()
-            if process.terminationStatus != 0 {
-                DispatchQueue.main.async {
+            DispatchQueue.main.async {
+                if manual {
+                    self.manualStartBusy = false
+                    self.recordButton?.isEnabled = true
+                }
+                if process.terminationStatus != 0 {
                     let alert = NSAlert()
                     alert.messageText = "Could not start recording"
                     alert.informativeText = String(decoding: result, as: UTF8.self)
                     alert.runModal()
-                }
+                } else if manual { self.window?.orderOut(nil) }
             }
         } catch {
-            DispatchQueue.main.async { self.durationLabel.stringValue = error.localizedDescription; self.showDetectionSettings() }
+            DispatchQueue.main.async {
+                self.manualStartBusy = false
+                self.recordButton?.isEnabled = true
+                self.durationLabel.stringValue = error.localizedDescription
+                self.showDetectionSettings()
+            }
         }
     }
 }

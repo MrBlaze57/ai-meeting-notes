@@ -22,7 +22,7 @@ def build(root, identity=None, run=subprocess.run):
     signer = identity or receipt.get("signer") or "-"
     version = run(["swiftc", "-version"], capture_output=True, text=True, check=True).stdout
     target = platform.machine() + "-apple-macos15.0"
-    inputs = [root / "native/MeetingRecorder.swift", root / "native/MeetingDetector.swift",
+    inputs = [root / "native/MeetingRecorder.swift", root / "native/MeetingDetector.swift", root / "native/RecordingUI.swift",
               root / "scripts/write-plist.py", root / "scripts/build-recorder.py"]
     digest = hashlib.sha256(json.dumps([version, target, signer]).encode())
     for path in inputs:
@@ -51,7 +51,7 @@ def build(root, identity=None, run=subprocess.run):
         executable = candidate / "Contents/MacOS/MeetingRecorder"
         executable.parent.mkdir(parents=True)
         run(["swiftc", "-swift-version", "5", "-parse-as-library", "-O", "-target", target,
-             "-module-cache-path", str(module_cache), str(inputs[0]), str(inputs[1]), "-o", str(executable)], check=True)
+             "-module-cache-path", str(module_cache), str(inputs[0]), str(inputs[1]), str(inputs[2]), "-o", str(executable)], check=True)
         run([sys.executable, str(root / "scripts/write-plist.py"), str(candidate / "Contents/Info.plist")], check=True)
         run(["/usr/bin/codesign", "--force", "--sign", signer, "--identifier", IDENTIFIER, str(candidate)], check=True)
         run(["/usr/bin/codesign", "--verify", "--strict", str(candidate)], check=True)

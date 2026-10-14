@@ -52,7 +52,7 @@ class RecorderBuildTest(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        for name in ("native/MeetingRecorder.swift", "native/MeetingDetector.swift", "scripts/write-plist.py", "scripts/build-recorder.py"):
+        for name in ("native/MeetingRecorder.swift", "native/MeetingDetector.swift", "native/RecordingUI.swift", "scripts/write-plist.py", "scripts/build-recorder.py"):
             path = self.root / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(name)
