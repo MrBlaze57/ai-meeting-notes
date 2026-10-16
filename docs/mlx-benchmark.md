@@ -31,4 +31,4 @@ The historical hours-long job also overlapped macOS sleep, so its elapsed time i
 
 ## Native app
 
-The branch bundle includes the selected Capture Ring PNG and compiled ICNS resource. Native compilation, strict code-signature verification, and bundled-resource checks passed. Dock appearance and live window behavior were not visually verified because the computer-use service timed out. The installed recorder build and its Accessibility grant were preserved; this branch has not been deployed over it.
+The branch bundle includes the selected Capture Ring PNG and compiled ICNS resource. Native compilation, strict code-signature verification, and bundled-resource checks passed. The user visually confirmed the Dock icon. Live recording/window behavior and prevention of duplicate Dock entries still require runtime verification; computer-use inspection timed out. The installed recorder build and its Accessibility grant were preserved; this branch has not been deployed over it.
