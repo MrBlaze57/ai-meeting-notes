@@ -5,7 +5,9 @@ import sys
 info = {
     "CFBundleExecutable": "MeetingRecorder", "CFBundleIdentifier": "com.johnhernandez.ai-meeting-notes.recorder",
     "CFBundleName": "MeetingRecorder", "CFBundleDisplayName": "AI Meeting Notes Recorder",
-    "CFBundlePackageType": "APPL", "CFBundleVersion": "3", "CFBundleShortVersionString": "0.3.0",
+    "CFBundlePackageType": "APPL", "CFBundleVersion": "4", "CFBundleShortVersionString": "0.3.0",
+    "CFBundleIconFile": "AppIcon",
+    "LSUIElement": True,
     "LSMinimumSystemVersion": "15.0", "NSPrincipalClass": "NSApplication",
     "NSMicrophoneUsageDescription": "Record your voice and in-person meeting conversations when you start a recording.",
     "NSScreenCaptureUsageDescription": "Capture Mac system audio for online meeting recordings. Screen images and video are not saved.",

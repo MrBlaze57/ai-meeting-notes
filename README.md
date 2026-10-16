@@ -32,7 +32,7 @@ For ChatGPT and iPhone, install the public directory listing once it is publishe
 
 ## Mac recorder: build and install
 
-Requires macOS 15+, Swift command-line tools, Python 3.11+, ffmpeg/ffprobe, `openai-whisper`, and a signed-in Codex CLI with Pages connected. Whisper and ffmpeg are separate dependencies; the local MCP server and worker use Python's standard library. An uncached Whisper model requires a download.
+Requires macOS 15+, Swift command-line tools, Python 3.11+, ffmpeg/ffprobe, a local transcription engine, and a signed-in Codex CLI with Pages connected. Use `openai-whisper`, or optionally MLX Whisper on Apple Silicon. Keeping `openai-whisper` installed enables automatic CPU fallback. The local MCP server and worker use Python's standard library; transcription runs in a separate CLI process. An uncached model requires a download.
 
 ```sh
 git clone https://github.com/MrBlaze57/ai-meeting-notes.git
@@ -44,6 +44,24 @@ codex plugin add ai-meeting-notes@ai-meeting-notes-local
 ```
 
 Build before adding the local marketplace so the installed copy includes the recorder built for your Mac. Release ZIPs contain source, not signed/notarized binaries. If installing the desktop plugin directly from the GitHub marketplace, build its installed copy using `scripts/build-installed.py` after installation. Start a fresh Codex chat to load the skill and tools.
+
+### Optional Apple Silicon acceleration
+
+Run these commands inside the plugin directory that processes your recordings: `plugins/ai-meeting-notes` for development, or the installed desktop plugin's directory after marketplace installation. Use Python 3.11 or newer. The environment and model are local build dependencies and are not included in Git or release ZIPs.
+
+```sh
+python3 -m venv .build/mlx-venv
+.build/mlx-venv/bin/python -m pip install 'mlx-whisper==0.4.3'
+HF_HUB_DISABLE_TELEMETRY=1 .build/mlx-venv/bin/hf download mlx-community/whisper-base-mlx --revision 1e3e249fb8d01c655324bd6841b1deadffd6d04c --local-dir .build/mlx-models/base
+```
+
+On Apple Silicon, the worker automatically prefers this environment's `mlx_whisper`, then a copy on `PATH`. It keeps the requested Whisper model size (`base` by default) and language selection. Prefetching the base model avoids waiting for its download after Stop. Other model sizes download on first use unless prefetched under `.build/mlx-models/<model>`.
+
+MLX uses independent audio windows to avoid carrying transcription mistakes through a long meeting. Invalid, missing, or excessively repetitive MLX output falls back to CPU Whisper when available. Temporary output directories prevent failed attempts from reusing an old transcript. The job receipt records the actual engine, model, normalization/transcription times, and fallback reason. `meeting_status` reports the preferred engine and available local executables; preference is not proof of a successful transcription.
+
+`MEETING_NOTES_TRANSCRIPTION_ENGINE=whisper` forces the original engine. The default is `auto`; `mlx` forces MLX without fallback for diagnostics. Audio processing stays local. On macOS, transcription holds an idle-sleep assertion only while its CLI is running; the display may sleep. Closing the lid or explicitly putting the Mac to sleep can still interrupt processing. Notes generation and Spaces publication follow transcription and have separate completion receipts.
+
+The macOS bundle uses the selected Capture Ring icon. Recording, detection, and progress helpers run without separate Dock entries; the manual launcher remains in the Dock. These helper windows retain their visible recording and Stop controls.
 
 Ask Codex to set up your **Meetings** destination. It finds or creates your own parent Page, verifies access, and stores its returned ID with `configure_meetings_page`. No shared destination is shipped. The private default cache is `~/Library/Application Support/AI Meeting Notes/cache`; `MEETING_NOTES_HOME` can select another location. Settings and publication receipts survive plugin updates.
 

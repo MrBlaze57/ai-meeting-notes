@@ -9,6 +9,7 @@ import json
 import math
 import os
 from pathlib import Path
+import platform
 import re
 import shutil
 import subprocess
@@ -21,10 +22,41 @@ ROOT = Path(__file__).resolve().parents[1]
 UPLOAD_LIMIT = 10 * 1024 * 1024
 ACTIVE = {"starting", "recording", "stopping"}
 MODELS = {"tiny", "base", "small", "medium", "large", "turbo"}
+MLX_MODELS = {
+    "tiny": "mlx-community/whisper-tiny-mlx",
+    "base": "mlx-community/whisper-base-mlx",
+    "small": "mlx-community/whisper-small-mlx",
+    "medium": "mlx-community/whisper-medium-mlx",
+    "large": "mlx-community/whisper-large-v3-mlx",
+    "turbo": "mlx-community/whisper-large-v3-turbo",
+}
 
 
 class MeetingError(Exception):
     pass
+
+
+def transcription_options(model="base"):
+    """Ordered local CLI candidates; importing the server never imports MLX/Torch."""
+    if model not in MODELS:
+        raise MeetingError("Unsupported Whisper model.")
+    preference = os.environ.get("MEETING_NOTES_TRANSCRIPTION_ENGINE", "auto")
+    if preference not in {"auto", "mlx", "whisper"}:
+        raise MeetingError("MEETING_NOTES_TRANSCRIPTION_ENGINE must be auto, mlx, or whisper.")
+    options = []
+    if preference != "whisper" and platform.system() == "Darwin" and platform.machine() == "arm64":
+        local = ROOT / ".build/mlx-venv/bin/mlx_whisper"
+        binary = str(local) if local.is_file() and os.access(local, os.X_OK) else shutil.which("mlx_whisper")
+        if binary:
+            cached_model = ROOT / ".build/mlx-models" / model
+            cached = (cached_model / "config.json").is_file() and any((cached_model / name).is_file() for name in ("weights.npz", "weights.safetensors"))
+            model_path = str(cached_model) if cached else MLX_MODELS[model]
+            options.append({"engine": "mlx", "binary": binary, "model": model_path})
+    if preference != "mlx":
+        binary = shutil.which("whisper")
+        if binary:
+            options.append({"engine": "whisper", "binary": binary, "model": model})
+    return options
 
 
 def now():
@@ -208,10 +240,16 @@ class Store:
             rec = self.recorder(path.parent)
             if rec["state"] in ACTIVE:
                 active.append({"meeting": read_json(path), "recording": rec})
+        engines = transcription_options()
+        dependencies = {name: shutil.which(name) for name in ("ffmpeg", "ffprobe", "whisper", "mlx_whisper", "swift", "codex")}
+        if engines and engines[0]["engine"] == "mlx":
+            dependencies["mlx_whisper"] = engines[0]["binary"]
         return {"cache_path": str(self.home), "destination": config, "active_recordings": active,
-                "dependencies": {name: shutil.which(name) for name in ("ffmpeg", "ffprobe", "whisper", "swift", "codex")},
+                "dependencies": dependencies,
                 "recorder_built": (ROOT / "bin/MeetingRecorder.app/Contents/MacOS/MeetingRecorder").is_file(),
-                "recording_platform": "macOS 15 or later", "notes_engine": "Codex host", "transcription_engine": "local Whisper",
+                "recording_platform": "macOS 15 or later", "notes_engine": "Codex host",
+                "transcription_engine": ("local MLX Whisper" if engines[0]["engine"] == "mlx" else "local Whisper") if engines else "not installed",
+                "transcription_options": engines,
                 "meeting_detection": self.detection_status()}
 
     def detection_status(self):
@@ -395,8 +433,8 @@ class Store:
                 raise MeetingError("Save notes for the current transcript before preparing publication.")
             if not shutil.which("ffmpeg"):
                 raise MeetingError("ffmpeg is required for audio processing.")
-            if phase == "transcribe" and not shutil.which("whisper"):
-                raise MeetingError("Install openai-whisper to transcribe locally.")
+            if phase == "transcribe" and not transcription_options(model):
+                raise MeetingError("Install openai-whisper or set up MLX Whisper to transcribe locally.")
             job = {"state": "running", "phase": phase, "started_at": now(), "started_epoch": time.time()}
             write_json(folder / f"{phase}-job.json", job)
             command = [sys.executable, str(ROOT / "server/main.py"), "--worker", phase, "--meeting", meeting_id,

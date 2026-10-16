@@ -52,7 +52,7 @@ class RecorderBuildTest(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        for name in ("native/MeetingRecorder.swift", "native/MeetingDetector.swift", "native/RecordingUI.swift", "scripts/write-plist.py", "scripts/build-recorder.py"):
+        for name in ("native/MeetingRecorder.swift", "native/MeetingDetector.swift", "native/RecordingUI.swift", "scripts/write-plist.py", "scripts/build-recorder.py", "assets/AppIcon.icns"):
             path = self.root / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(name)
@@ -91,6 +91,15 @@ class RecorderBuildTest(unittest.TestCase):
         bundle, _ = self.build()
         (bundle / "Contents/MacOS/MeetingRecorder").write_text("tampered binary")
         self.assertTrue(self.build()[1])
+        self.assertEqual(self.tools.compiles, 2)
+
+    def test_icon_changes_rebuild_and_package_the_new_resource(self):
+        bundle, _ = self.build()
+        resource = bundle / "Contents/Resources/AppIcon.icns"
+        self.assertTrue(resource.is_file(), "The app bundle must include its Dock icon")
+        (self.root / "assets/AppIcon.icns").write_bytes(b"updated icon fixture")
+        self.assertTrue(self.build()[1])
+        self.assertEqual(resource.read_bytes(), b"updated icon fixture")
         self.assertEqual(self.tools.compiles, 2)
 
 
