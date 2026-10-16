@@ -125,7 +125,10 @@ final class Recorder: NSObject, NSApplicationDelegate, SCStreamOutput, SCStreamD
         if let path = argument("--capture-dir") { directory = URL(fileURLWithPath: path, isDirectory: true) }
         let backgroundDetection = directory == nil && CommandLine.arguments.contains("--watch")
         let indicatorPreview = CommandLine.arguments.contains("--preview-indicator")
-        NSApp.setActivationPolicy(backgroundDetection ? .accessory : .regular)
+        let helper = backgroundDetection || directory != nil || argument("--process-dir") != nil || indicatorPreview || argument("--test-stop") != nil
+        // Only the launcher owns a Dock entry. Capture/progress windows and
+        // the floating Stop control remain visible as accessory-app windows.
+        NSApp.setActivationPolicy(helper ? .accessory : .regular)
         let appMenu = NSMenu()
         let appItem = NSMenuItem()
         let commands = NSMenu()
@@ -663,7 +666,6 @@ final class Recorder: NSObject, NSApplicationDelegate, SCStreamOutput, SCStreamD
     }
 
     @objc func showDetectionSettings() {
-        NSApp.setActivationPolicy(.regular)
         window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
