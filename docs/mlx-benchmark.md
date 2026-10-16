@@ -31,4 +31,14 @@ The historical hours-long job also overlapped macOS sleep, so its elapsed time i
 
 ## Native app
 
-The branch bundle includes the selected Capture Ring PNG and compiled ICNS resource. Native compilation, strict code-signature verification, and bundled-resource checks passed. The user visually confirmed the Dock icon. Live recording/window behavior and prevention of duplicate Dock entries still require runtime verification; computer-use inspection timed out. The installed recorder build and its Accessibility grant were preserved; this branch has not been deployed over it.
+The bundle includes the selected Capture Ring PNG and compiled ICNS resource. Native compilation, strict code-signature verification, and bundled-resource checks passed. The user visually confirmed the Dock icon. During branch validation, the original installed recorder was preserved.
+
+## Approved local rollout
+
+On October 15, 2026, the user approved rollout and [PR #1](https://github.com/MrBlaze57/ai-meeting-notes/pull/1) was merged into `main`. The installed plugin received the exact tested app bundle, an isolated MLX environment matching the tested package versions, and the prefetched base model. The native build checks reused the verified signature instead of recompiling the app.
+
+The installed Python 3.9 worker successfully normalized and transcribed a copied 180-second excerpt using MLX, without fallback or a model download. This first run in the new environment took 12.027 seconds for transcription, including cold startup. It is a deployment smoke check, separate from the controlled comparison above. All 31 protected meeting files retained their prior content hashes or audio size/modification timestamps. A rollback backup was retained locally.
+
+The user approved refreshing the updated app's Accessibility entry and completed the macOS authentication prompt. The detector then reported `watching` with `requires_accessibility: false`, including after a full detector restart. Inspection of the running recorder processes found one regular Dock launcher and one accessory background detector.
+
+All 70 tests passed on the merged tree. No live recording or Spaces publication was initiated during rollout verification. Recording/progress windows still need confirmation during a real meeting; no human-scored transcript accuracy benchmark has been completed.
