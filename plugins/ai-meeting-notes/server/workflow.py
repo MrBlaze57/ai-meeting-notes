@@ -61,7 +61,10 @@ def command(store, folder):
     cmd = [executable, "exec", "--ignore-user-config", "--sandbox", "read-only", "--skip-git-repo-check",
            "--ephemeral", "--json", "--color", "never", "-C", str(runtime),
            "-o", str(folder / "workflow-result.txt"), "--enable", "apps"]
-    for feature in ("hooks", "memories", "multi_agent", "computer_use", "browser_use"):
+    # Disable plugin loading for this invocation, including default-enabled
+    # plugins that --ignore-user-config alone does not exclude. Enumerating
+    # installed plugins also queries remote marketplaces and can block offline.
+    for feature in ("plugins", "hooks", "memories", "multi_agent", "computer_use", "browser_use"):
         cmd += ["--disable", feature]
     overrides = {
         "approval_policy": "never",
@@ -84,15 +87,6 @@ def command(store, folder):
             "required": True, "enabled_tools": LOCAL_TOOLS,
         },
     }
-    # Installed plugins can be enabled by default even with --ignore-user-config. Disable
-    # them per invocation so unrelated hooks/tools/skills cannot join the processing turn.
-    try:
-        inventory = subprocess.run([executable, "plugin", "list", "--json"], stdin=subprocess.DEVNULL,
-                                   capture_output=True, text=True, timeout=30, check=True)
-        overrides["plugins"] = {p["pluginId"]: {"enabled": False}
-                                for p in json.loads(inventory.stdout).get("installed", [])}
-    except (OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
-        raise MeetingError("Could not isolate the background Codex runner. Click Retry. " + str(error)) from error
     for key, value in overrides.items():
         if isinstance(value, dict):
             # TOML inline tables require '=' instead of JSON's ':'. Values contain only data.

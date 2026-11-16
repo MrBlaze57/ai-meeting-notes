@@ -281,7 +281,7 @@ class MeetingsTest(unittest.TestCase):
 
     def test_background_command_keeps_sandbox_and_auth_in_codex(self):
         from workflow import command
-        with patch("workflow.shutil.which", return_value="/usr/local/bin/codex"), patch("workflow.subprocess.run", return_value=Mock(stdout='{"installed": []}')):
+        with patch("workflow.shutil.which", return_value="/usr/local/bin/codex"):
             cmd = command(self.store, self.folder)
         self.assertEqual(cmd[cmd.index("--sandbox") + 1], "read-only")
         self.assertNotIn("--dangerously-bypass-approvals-and-sandbox", cmd)
@@ -297,6 +297,29 @@ class MeetingsTest(unittest.TestCase):
         self.assertNotIn("trash_page", pages)
         self.assertNotIn("update_page_sharing", pages)
         self.assertIn("apps.connector_openai_pages.default_tools_enabled=false", cmd)
+
+    def test_background_startup_does_not_require_marketplace_response(self):
+        from workflow import command
+        # Real subprocess boundary: inventory is unavailable, while exec can
+        # still be configured locally. A marketplace outage must not gate it.
+        queried = self.root / "marketplace-queried"
+        executable = self.root / "codex"
+        executable.write_text(
+            "#!" + sys.executable + "\n"
+            "from pathlib import Path\n"
+            "import sys\n"
+            "Path(" + repr(str(queried)) + ").touch()\n"
+            "sys.exit(42)\n")
+        executable.chmod(0o700)
+        with patch("workflow.shutil.which", return_value=str(executable)):
+            try:
+                cmd = command(self.store, self.folder)
+            except MeetingError as error:
+                self.fail("Worker startup depended on marketplace discovery: " + str(error))
+        self.assertEqual(cmd[:2], [str(executable), "exec"])
+        disabled = [cmd[i + 1] for i, arg in enumerate(cmd[:-1]) if arg == "--disable"]
+        self.assertIn("plugins", disabled)
+        self.assertFalse(queried.exists(), "Startup contacted the plugin inventory")
 
     def test_legacy_verified_receipts_retain_access_and_size_for_retry(self):
         manifest = self.prep()["manifest"]

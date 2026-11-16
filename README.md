@@ -113,6 +113,8 @@ python3 scripts/package-plugin.py
 
 Publication receipts distinguish Page creation, uploads, content, indexing, and read-back verification. Retries reuse saved receipts and preserve Page edits. The automatic runner restricts processing to its assigned meeting and uses the connected Pages capabilities; it has no copied Spaces credentials or undocumented API integration.
 
+The detached runner disables plugins for its own invocation rather than enumerating them with `codex plugin list`. That inventory command also queries remote marketplaces, so a marketplace outage must not block notes from starting. This invocation-level setting leaves the user's normal Codex plugins enabled.
+
 See [VALIDATION.md](VALIDATION.md) for verified outcomes and limits. Live audio capture and actual online-call detection remain unverified; synthetic tests and builds do not prove them. ChatGPT directory approval and iPhone operation are separate outcomes.
 
 [MIT License](LICENSE) · [Privacy](PRIVACY.md) · [Use](TERMS.md) · [Support](https://github.com/MrBlaze57/ai-meeting-notes/issues)
